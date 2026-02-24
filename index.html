@@ -5316,28 +5316,33 @@ window.switchTab = function(tab) {
         if (e.target === this) hideMobileFighterPanel();
     });
 
-    // Select fighter from panel
+    // Select fighter from panel — call selectFighter directly (no card.click())
     document.getElementById('mfpSelectBtn').addEventListener('click', function() {
         if (!mfpFighterId) return;
-        hideMobileFighterPanel();
-        // Simulate card click — find the card and trigger selection
-        const card = document.querySelector(`.char-card[data-id="${mfpFighterId}"]`);
-        if (card && !card.classList.contains('locked-card')) {
-            card.click();
+        const fighter = ALL_FIGHTERS.find(f => f.id === mfpFighterId);
+        if (fighter && !fighter._locked) {
+            selectFighter(mfpFighterId);
         }
+        hideMobileFighterPanel();
     });
 
-    // ── Touch event on char grid → open mobile panel ─────────
-    document.getElementById('charGrid').addEventListener('touchstart', function(e) {
+    // ── Touch event on char grid → show panel AND select fighter ──
+    // No preventDefault — let the native click also fire so selectFighter
+    // is called both by touch and by the panel's SELECT button path.
+    document.getElementById('charGrid').addEventListener('touchend', function(e) {
         if (!isMobile()) return;
         const card = e.target.closest('.char-card');
         if (!card) return;
         const id = parseInt(card.dataset.id);
         const fighter = ALL_FIGHTERS.find(f => f.id === id);
         if (!fighter) return;
-        e.preventDefault(); // prevent ghost click
+        // Select the fighter immediately so startRunBtn is enabled
+        if (!card.classList.contains('locked-card')) {
+            selectFighter(id);
+        }
+        // Show panel as a preview/confirmation
         showMobileFighterPanel(fighter);
-    }, { passive: false });
+    }, { passive: true });
 
     // ── Title screen: "CLICK TO PLAY" → "TAP TO PLAY" on mobile
     function updateTitleCta() {
